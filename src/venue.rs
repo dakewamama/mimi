@@ -79,3 +79,65 @@ impl Venue for JupiterPredictVenue {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn live_read_returns_a_price() {
+        let venue = JupiterPredictVenue::new();
+        let url = format!(
+            "{BASE_URL}/events?category=sports&filter=trending&includeMarkets=true"
+        );
+        let resp: EventsResponse = venue
+            .client
+            .get(&url)
+            .send()
+            .await
+            .expect("events request failed")
+            .json()
+            .await
+            .expect("events response did not parse");
+
+        let market = resp
+            .data
+            .into_iter()
+            .flat_map(|e| e.markets)
+            .find(|m| m.pricing.is_some() && m.status.as_deref() == Some("open"))
+            .expect("no live open market with pricing found");
+
+        let price = venue.price(&market.market_id, "yes").await;
+        assert!(price.is_some(), "expected a live price for {}/yes", market.market_id);
+        let p = price.unwrap();
+        assert!((0.0..=1.0).contains(&p), "price {p} out of [0,1] for {}", market.market_id);
+    }
+
+    #[tokio::test]
+    async fn closed_market_returns_none_not_zero() {
+        let venue = JupiterPredictVenue::new();
+        let url = format!(
+            "{BASE_URL}/events?category=sports&filter=trending&includeMarkets=true"
+        );
+        let resp: EventsResponse = venue
+            .client
+            .get(&url)
+            .send()
+            .await
+            .expect("events request failed")
+            .json()
+            .await
+            .expect("events response did not parse");
+
+        let closed = resp
+            .data
+            .into_iter()
+            .flat_map(|e| e.markets)
+            .find(|m| m.status.as_deref() == Some("closed"));
+
+        if let Some(market) = closed {
+            let price = venue.price(&market.market_id, "yes").await;
+            assert!(price.is_none(), "closed market {} should not yield a price", market.market_id);
+        }
+    }
+}
+
