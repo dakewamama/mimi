@@ -57,3 +57,40 @@ pub async fn serve(store: SignalStore, addr: &str) -> std::io::Result<()> {
     axum::serve(listener, router(store)).await
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::divergence::Side;
+
+    fn sample() -> Signal {
+        Signal {
+            market_id: "ARG-FRA-1X2".into(),
+            outcome_id: "home".into(),
+            fair: 0.48,
+            venue: 0.42,
+            edge: 0.06,
+            side: Side::Buy,
+        }
+    }
+
+    #[test]
+    fn record_bounds_and_orders() {
+        let store = new_store();
+        for _ in 0..(MAX_SIGNALS + 10) {
+            record(&store, sample());
+        }
+        assert_eq!(store.lock().unwrap().len(), MAX_SIGNALS);
+    }
+
+    #[test]
+    fn record_serializes_to_json() {
+        let store = new_store();
+        record(&store, sample());
+        let rec = store.lock().unwrap().front().unwrap().clone();
+        let json = serde_json::to_string(&rec).unwrap();
+        assert!(json.contains("\"market_id\":\"ARG-FRA-1X2\""));
+        assert!(json.contains("\"side\":\"Buy\""));
+        assert!(json.contains("\"ts_millis\""));
+    }
+}
+
