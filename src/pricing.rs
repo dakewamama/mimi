@@ -73,3 +73,76 @@ pub fn devig_proportional(market: &Market) -> FairBook {
     FairBook { prices, overround }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn odds(v: f64) -> DecimalOdds {
+        DecimalOdds::new(v).unwrap()
+    }
+
+    #[test]
+    fn rejects_odds_below_one() {
+        assert!(DecimalOdds::new(0.99).is_none());
+        assert!(DecimalOdds::new(f64::NAN).is_none());
+        assert!(DecimalOdds::new(f64::INFINITY).is_none());
+        assert!(DecimalOdds::new(1.0).is_some());
+    }
+
+    #[test]
+    fn implied_prob_bounds() {
+        assert!((odds(1.0).implied_prob() - 1.0).abs() < EPS);
+        assert!((odds(2.0).implied_prob() - 0.5).abs() < EPS);
+        let p = odds(4.0).implied_prob();
+        assert!(p > 0.0 && p <= 1.0);
+    }
+
+    #[test]
+    fn market_needs_two_outcomes() {
+        let one = vec![Outcome::new("home", odds(2.0))];
+        assert!(Market::new(one).is_none());
+    }
+
+    #[test]
+    fn devig_sums_to_one() {
+        let m = Market::new(vec![
+            Outcome::new("home", odds(2.00)),
+            Outcome::new("draw", odds(3.50)),
+            Outcome::new("away", odds(4.00)),
+        ])
+        .unwrap();
+
+        let book = devig_proportional(&m);
+        let sum: f64 = book.prices.iter().map(|(_, p)| p).sum();
+        assert!((sum - 1.0).abs() < EPS, "prices summed to {sum}");
+        assert!(book.overround > 1.0, "overround was {}", book.overround);
+    }
+
+    #[test]
+    fn devig_is_monotonic() {
+        let m = Market::new(vec![
+            Outcome::new("fav", odds(1.50)),
+            Outcome::new("dog", odds(3.00)),
+        ])
+        .unwrap();
+
+        let book = devig_proportional(&m);
+        let fav = book.price_of("fav").unwrap();
+        let dog = book.price_of("dog").unwrap();
+        assert!(fav > dog, "fav {fav} should exceed dog {dog}");
+    }
+
+    #[test]
+    fn fair_book_has_no_vig() {
+        let m = Market::new(vec![
+            Outcome::new("yes", odds(2.00)),
+            Outcome::new("no", odds(2.00)),
+        ])
+        .unwrap();
+
+        let book = devig_proportional(&m);
+        assert!((book.overround - 1.0).abs() < EPS);
+        assert!((book.price_of("yes").unwrap() - 0.5).abs() < EPS);
+    }
+}
+
