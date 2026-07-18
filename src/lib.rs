@@ -1,3 +1,4 @@
+pub mod api;
 pub mod divergence;
 pub mod feed;
 pub mod pricing;
