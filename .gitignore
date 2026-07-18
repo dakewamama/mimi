@@ -1,0 +1,6 @@
+/target
+.env
+*.key
+*keypair*.json
+scripts/
+
