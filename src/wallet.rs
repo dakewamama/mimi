@@ -56,3 +56,37 @@ impl LocalSigner {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+
+    #[test]
+    fn rejects_missing_env_var() {
+        // SAFETY: test-only env manipulation, single-threaded test.
+        unsafe { env::remove_var("SOLANA_KEYPAIR_PATH") };
+        assert!(matches!(LocalSigner::load(), Err(WalletError::EnvVarMissing)));
+    }
+
+    #[test]
+    fn loads_a_valid_keypair_file_and_derives_pubkey() {
+        let signing_key = SigningKey::from_bytes(&[7u8; 32]);
+        let mut bytes = signing_key.to_bytes().to_vec();
+        bytes.extend_from_slice(&signing_key.verifying_key().to_bytes());
+
+        let mut tmp = std::env::temp_dir();
+        tmp.push("mimi_test_keypair.json");
+        let mut f = fs::File::create(&tmp).unwrap();
+        f.write_all(serde_json::to_string(&bytes).unwrap().as_bytes()).unwrap();
+
+        // SAFETY: test-only env manipulation, single-threaded test.
+        unsafe { env::set_var("SOLANA_KEYPAIR_PATH", tmp.to_str().unwrap()) };
+        let signer = LocalSigner::load().expect("should load valid keypair");
+        assert_eq!(signer.pubkey_bytes(), signing_key.verifying_key().to_bytes());
+        assert!(!signer.pubkey_base58().is_empty());
+
+        fs::remove_file(&tmp).ok();
+        unsafe { env::remove_var("SOLANA_KEYPAIR_PATH") };
+    }
+}
+
