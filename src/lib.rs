@@ -1,2 +1,2 @@
-//! mimi
+pub mod pricing;
 
