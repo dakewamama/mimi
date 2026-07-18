@@ -72,3 +72,42 @@ impl MarketSource for TxLineSource {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn guest_jwt_is_live() {
+        let jwt = TxLineSource::guest_jwt().await.expect("guest jwt request failed");
+        assert!(!jwt.is_empty());
+        assert_eq!(jwt.split('.').count(), 3, "expected a JWT with 3 segments");
+    }
+
+    fn fixture_market() -> MarketUpdate {
+        use crate::pricing::{DecimalOdds, Outcome};
+        MarketUpdate {
+            market_id: "ARG-FRA-1X2".to_string(),
+            market: Market::new(vec![
+                Outcome::new("home", DecimalOdds::new(2.0).unwrap()),
+                Outcome::new("away", DecimalOdds::new(4.0).unwrap()),
+            ])
+            .unwrap(),
+        }
+    }
+
+    struct ReplaySource(std::collections::VecDeque<MarketUpdate>);
+
+    impl MarketSource for ReplaySource {
+        async fn next(&mut self) -> Option<MarketUpdate> {
+            self.0.pop_front()
+        }
+    }
+
+    #[tokio::test]
+    async fn replay_source_drains_in_order() {
+        let mut src = ReplaySource(std::collections::VecDeque::from(vec![fixture_market()]));
+        assert!(src.next().await.is_some());
+        assert!(src.next().await.is_none());
+    }
+}
+
