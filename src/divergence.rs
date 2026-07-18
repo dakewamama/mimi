@@ -1,7 +1,3 @@
-//! edge = fair - venue. Positive edge means the venue underprices the
-//! outcome (Buy); negative means it overprices (Sell). `threshold` is a raw
-//! price gap; a live gate must also clear fees, slippage, and tip.
-
 use serde::Serialize;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]

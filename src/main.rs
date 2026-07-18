@@ -1,6 +1,3 @@
-//! Detection loop and signal feed run concurrently. The feed stays up and
-//! serves whatever has been detected, independent of live data flow.
-
 use mimi::api;
 use mimi::divergence::detect;
 use mimi::feed::{fixture_teams, MarketSource, TxLineSource};

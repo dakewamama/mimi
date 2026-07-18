@@ -1,11 +1,3 @@
-//! Jupiter Predict price read (api.jup.ag/prediction/v1). Read-only, no key.
-//! Prices are micro-USD (divide by 1e6 for [0,1]). Only "open" markets are
-//! returned; a closed market's zeroed price would fake a divergence.
-//!
-//! The events list is cached for a short window: without it, every single
-//! price() call re-fetches the entire trending catalog, which is wasteful
-//! and was causing transient failures under call volume.
-
 use serde::Deserialize;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};

@@ -1,8 +1,3 @@
-//! TxLINE signal source. guest_jwt is a live call needing no wallet.
-//! TxLineSource consumes the /odds/stream Server-Sent Events feed and decodes
-//! each Odds record into the pricing layer's Market. Prices are integer
-//! decimal odds; PriceNames pairs with Prices by index.
-
 use crate::pricing::{DecimalOdds, Market, Outcome};
 use futures_util::StreamExt;
 use serde::Deserialize;

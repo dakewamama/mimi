@@ -1,6 +1,3 @@
-//! HTTP signal feed. GET /signals returns recent divergences as JSON,
-//! GET /health is a liveness probe. No wallet, no execution rights.
-
 use axum::{extract::State, routing::get, Json, Router};
 use serde::Serialize;
 use std::collections::VecDeque;

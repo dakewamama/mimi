@@ -1,10 +1,3 @@
-//! Cross-venue fixture matching. TxLINE identifies a market by fixture id and
-//! outcome (part1/draw/part2); Jupiter identifies it by team name. This resolves
-//! a TxLINE outcome to a Jupiter (market_id, side) by matching team names.
-//!
-//! TxLINE fixture -> team names comes from the fixtures endpoint (authenticated,
-//! resolved at runtime). Jupiter games come from the public live/upcoming feeds.
-
 use serde::Deserialize;
 use std::collections::HashMap;
 

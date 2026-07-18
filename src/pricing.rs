@@ -1,6 +1,3 @@
-//! Odds to fair-value conversion. Invariants are enforced by construction
-//! and covered by the tests below.
-
 pub const EPS: f64 = 1e-9;
 
 #[derive(Debug, Clone, Copy, PartialEq)]

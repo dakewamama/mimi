@@ -1,7 +1,3 @@
-//! Local signer. SOLANA_KEYPAIR_PATH points to a keypair file on disk --
-//! never raw key bytes in env, chat, or git. The file is a JSON array of
-//! 64 bytes (seed || pubkey), parsed directly to avoid solana-sdk's OpenSSL.
-
 use ed25519_dalek::SigningKey;
 use std::env;
 use std::fmt;
