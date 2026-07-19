@@ -63,7 +63,13 @@ mod tests {
 
     #[test]
     fn threshold_is_inclusive_boundary() {
-        assert!(detect("m", "home", 0.50, 0.47, 0.03).is_some());
+        // The original test asserted this with 0.50/0.47/0.03, where the gap is
+        // actually 0.030000000000000027 -- it passed on float error, not on the
+        // boundary. These literals are binary-exact, so the boundary is really
+        // exercised: detect() is `edge.abs() < threshold`, so a gap EQUAL to
+        // threshold fires.
+        assert!(detect("m", "home", 0.5, 0.25, 0.25).is_some(), "gap == threshold must fire");
+        assert!(detect("m", "home", 0.5, 0.375, 0.25).is_none(), "gap < threshold must not fire");
     }
 }
 

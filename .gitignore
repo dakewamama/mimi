@@ -2,3 +2,5 @@
 .env
 *.key
 *keypair*.json
+web/node_modules
+web/dist

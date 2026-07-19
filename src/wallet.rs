@@ -57,15 +57,21 @@ mod tests {
     use super::*;
     use std::io::Write;
 
+    // These tests mutate process-global env. cargo runs tests on parallel
+    // threads by default, so without this lock they race and flake.
+    static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     #[test]
     fn rejects_missing_env_var() {
-        // SAFETY: test-only env manipulation, single-threaded test.
+        let _g = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        // SAFETY: env access serialized by ENV_LOCK for the whole test binary.
         unsafe { env::remove_var("SOLANA_KEYPAIR_PATH") };
         assert!(matches!(LocalSigner::load(), Err(WalletError::EnvVarMissing)));
     }
 
     #[test]
     fn loads_a_valid_keypair_file_and_derives_pubkey() {
+        let _g = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let signing_key = SigningKey::from_bytes(&[7u8; 32]);
         let mut bytes = signing_key.to_bytes().to_vec();
         bytes.extend_from_slice(&signing_key.verifying_key().to_bytes());
@@ -75,7 +81,7 @@ mod tests {
         let mut f = fs::File::create(&tmp).unwrap();
         f.write_all(serde_json::to_string(&bytes).unwrap().as_bytes()).unwrap();
 
-        // SAFETY: test-only env manipulation, single-threaded test.
+        // SAFETY: env access serialized by ENV_LOCK for the whole test binary.
         unsafe { env::set_var("SOLANA_KEYPAIR_PATH", tmp.to_str().unwrap()) };
         let signer = LocalSigner::load().expect("should load valid keypair");
         assert_eq!(signer.pubkey_bytes(), signing_key.verifying_key().to_bytes());
