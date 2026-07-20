@@ -1,4 +1,3 @@
-// src/feed.rs
 use crate::pricing::{DecimalOdds, Market, Outcome};
 use futures_util::StreamExt;
 use serde::Deserialize;
@@ -12,9 +11,6 @@ const DEVNET_API_BASE: &str = "https://txline-dev.txodds.com/api";
 const DEFAULT_PRICE_SCALE: f64 = 1000.0;
 const HTTP_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
 
-// Byte-slicing a String panics on a non-char-boundary index. Fixture payloads
-// are full of multi-byte names (Besiktas, Bayern Munchen), so `&body[..300]`
-// was a live panic in the detection task.
 pub fn head(s: &str, max: usize) -> &str {
     if s.len() <= max {
         return s;
@@ -56,9 +52,6 @@ struct FixtureRecord {
     participant2: String,
 }
 
-// fixture_id -> (participant1, participant2), fetched once from the fixtures
-// snapshot so the matcher can turn a stream fixture id into team names.
-// The endpoint returns a bare JSON array, not a {data: [...]} envelope.
 pub async fn fixture_teams(
     jwt: &str,
     api_token: &str,
